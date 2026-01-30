@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: hands-on
+  name: hands-on
+  namespace: user-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hands-on
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: hands-on
+        version: 1.0.0
+        environment: prod
+    spec:
+      containers:
+        - image: nginx:latest
+          name: foobar
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d
+              name: config
+      volumes:
+        - name: config
+          configMap:
+            name: config
+            defaultMode: 0644
