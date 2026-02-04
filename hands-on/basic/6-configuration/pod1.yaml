@@ -1,41 +1,45 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
+  name: configmap-pod
   labels:
-    app: hands-on
-  name: hands-on
+    version: "1"
+    app: nginx
   namespace: user-2
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: hands-on
-  strategy: {}
-  template:
-    metadata:
-      labels:
-        app: hands-on
-        version: 1.0.0
-        environment: prod
-    spec:
-      containers:
-        - image: nginx:latest
-          name: foobar
-          resources:
-            requests:
-              cpu: 10m
-              memory: 50Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
-          ports:
-            - containerPort: 80
-              protocol: TCP
-          volumeMounts:
-            - mountPath: /etc/nginx/conf.d
-              name: config
-      volumes:
-        - name: config
-          configMap:
-            name: config
-            defaultMode: 0644
+  containers:
+    - name: nginx
+      image: nginx:latest
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: DATABASE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: user2secret
+              key: DATABASE_HOST
+      ports:
+        - name: configmap-pod
+          containerPort: 80
+          protocol: TCP
+      volumeMounts:
+        - mountPath: "/tmp"
+          name: secret-config
+          readOnly: true
+        - mountPath: "/etc/nginx/conf.d"
+          name: nginx-config
+          readOnly: true
+  volumes:
+    - name: nginx-config
+      configMap:
+        name: nginx-config
+        defaultMode: 0644
+    - name: secret-config
+      secret:
+        secretName: user2secret
+        defaultMode: 0644
+        items:
+          - key: DATABASE_USER
+            path: DATABASE_USER
+          - key: DATABASE_PASSWORD
+            path: DATABASE_PASSWORD
+  restartPolicy: Always
